@@ -1,0 +1,104 @@
+import math
+
+class classe_mlp:
+	def_init_(camada_de_entrada, camada_escondida, camada_de_saída, taxa_de_aprendizado, condição_de_parada):
+		self.camada_de_entrada = 
+		self.camada_escondida = 
+		self.camada_de_saída = 
+		self.taxa_de_aprendizado = 
+        self.condição_de_parada = 
+		
+
+	def treinamento(vetor_entrada, matriz_label)
+
+
+		for matriz_entrada
+
+		
+			feedforward()
+
+				for x de 0 até
+
+				vetor = camada_de_entrada[0][:] #Cada unidade de entrada (Xi, i = 1..n) recebe um sinal de entrada xi e o dissipa para todas as unidades na próxima camada.
+				for i in range(len(X_data)):
+					for j in range(3):
+					vetor[j] += X_data[i] * matriz[i + 1][j]
+
+
+				Cada unidade escondida (Zj, j = 1..p) soma suas entradas ponderadas, aplica a função de ativação para computar seu sinal de saída, e o envia para as 		 unidades da próxima camada.
+				vetor_valores_camada_escondida
+
+				Cada unidade de saída (Yk , k = 1..m) soma suas entradas ponderadas, aplica a função de ativação para computar seu sinal de saída.
+		
+			backpropagation
+
+				Cada unidade de saída (Yk , k = 1..m) considera sua saída e a saída esperada para o dado de entrada para então computar o termo de informação de erro δk. Então calcula a correção de pesos e bias (∆wjk e ∆w0k ) e envia o termo de correção de erro para a camada anterior.
+
+				Calcula erro quadrático médio a partir do erro dos 26 neurônios
+
+				Cada unidade de saída (Zj, j = 1..p) soma suas entradas δk (as informações de erro vindas da camada acima (posterior)).
+
+				atualização de pesos;
+
+
+			vetor que guarda valores erro quadrático a cada época 
+
+
+			Se chegar na condição de parada >> Sai do for
+
+		
+		Salva os pesos (ver como o sistema guarda os pesos) e gera arquivo com pesos finais
+
+
+	func teste(X_validação, Y_validação, e outros necessários para teste) # função utilizada para rodar o MLP já treinado utilizando agora os dados de validação
+
+			
+		for X_teste e Y_teste
+
+			feedforward
+
+			Calcula média de acertos e guarda
+			
+			Calcula desvio padrão e guarda
+			
+			calcula erro quadrático médio das 120 saídas
+
+			vetor que guarda valores erro quadrático a iteração 
+
+
+		
+		
+
+X_data = []
+carregar arquivo X.npy
+X_data recebe X.npy
+
+Y_data = []
+carregar arquivo Y_classe.npy
+Y_data recebe X.npy
+
+
+pesos_camada_de_entrada = cria uma matriz 121 x 10 (120 + 1 do bias) onde cada linha da matriz vai inicializar seus valores de forma aleatória entre -0,5 e 0,5
+pesos_camada_escondida = cria uma matriz 11 x 120 (10 + 1 do bias) onde cada linha da matriz vai inicializar seus valores de forma aleatória entre -0,5 e 0,5
+
+
+gera arquivo pesos_camada_de_entrada_inicial.npy para guardar pesos_camada_de_entrada
+gera arquivo pesos_camada_escondida_inicial.npy para guardar pesos_camada_escondida
+
+
+condição_de_parada = número de épocas máximo ou parada antecipada ou baixa variação dos pesos
+
+mlp = class_mlp(pesos_camada_de_entrada, pesos_camada_escondida, camada_de_saída, taxa_de_aprendizado = 0.5, condição_de_parada)
+
+mlp.treinamento(X_data, Y_data)
+
+
+_______________________________________________________________________
+
+Condições de parada: número de épocas máximo ou parada antecipada ou baixa variação dos pesos # verificar se será necessário criar função para algumas das condições
+
+_______________________________________________________________________
+
+Criar Cross validation # verificar se será necessário criar função para implementar cross validation (acho que sim, mas só para dividir o dataset de treinamento em folds)
+
+
