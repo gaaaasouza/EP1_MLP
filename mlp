@@ -1,0 +1,119 @@
+import math
+import numpy as np
+
+class classe_mlp:
+	def_init_(): # verificar como criar o construtor
+
+	
+		
+	def feedforward():
+
+		# Separa o bias (primeira linha) e a matriz de pesos (demais linhas)
+		bias_v = matriz_v[0]
+		pesos_v = matriz_v[1:]
+
+		vetor_Z_in = bias_v + vetor_X @ pesos_v 	# produto escalar entre vetor_X e cada coluna de pesos
+		vetor_Z = sigmoid(vetor_Z_in) 				# aplica a função de ativação em cada elemento do vetor vetor_Z_in
+
+
+		# Separa o bias (primeira linha) e a matriz de pesos (demais linhas)
+		bias_w = matriz_w[0]
+		pesos_w = matriz_w[1:]
+
+		vetor_Y_in = bias_w + vetor_Z @ pesos_w 	# produto escalar entre vetor_Z e cada coluna de pesos
+		vetor_Y = sigmoid(vetor_Y_in) 				# aplica a função de ativação em cada elemento do vetor vetor_Z_in
+		
+	def backpropagation():
+
+		# Cálculo do erro da camada de saída
+		vetor_deltinha_y = (vetor_target - vetor_Y) * derivada_sigmoid(vetor_Y_in)  # Cada unidade de saída considera sua saída e a saída esperada (vetor_target) para o dado de entrada para entao computar o termo de informacao de erro "deltinha"
+
+		# Correção da camada escondida → saída (matriz_correcao_w com mesmas dimensões de matriz_w)
+		matriz_correcao_w = np.zeros_like(matriz_w)
+		matriz_correcao_w[0] = alfa * vetor_deltinha_y                         # calcula o termo de correção do bias para a matriz_w
+		matriz_correcao_w[1:] = alfa * np.outer(vetor_Z, vetor_deltinha_y)     # calcula o termo de correção dos demais pesos para a matriz_w
+
+		# Cálculo do erro da camada escondida
+		vetor_deltinha_z = derivada_sigmoid(vetor_Z_in) * (pesos_w @ vetor_deltinha_y)
+
+		# Correção da camada entrada → escondida (matriz_correcao_v com mesmas dimensões de matriz_v)
+		matriz_correcao_v = np.zeros_like(matriz_v)
+		matriz_correcao_v[0] = alfa * vetor_deltinha_z							# calcula o termo de correção do bias para a matriz_v
+		matriz_correcao_v[1:] = alfa * np.outer(vetor_X, vetor_deltinha_z)		# calcula o termo de correção dos demais pesos para a matriz_v
+
+
+	def atualiza_pesos():
+
+		global matriz_v, matriz_w  # para que as atualizações persistam fora da função (ver se vai ser necessário)
+
+		matriz_v = matriz_v + matriz_correcao_v
+		matriz_w = matriz_w + matriz_correcao_w
+
+	def treinamento(): # função utilizada para treinar o MLP utilizando os dados de treinamento
+
+		while(condição de parada é falsa)
+
+			feedforward()
+			backpropagation()
+			atualiza_pesos()
+
+	def teste() # função utilizada para rodar o MLP já treinado utilizando agora os dados de teste
+			
+		for X_teste e Y_teste
+
+			feedforward
+
+			Calcula média de acertos e guarda
+			
+			Calcula desvio padrão e guarda
+			
+			calcula erro quadrático médio das 120 saídas
+
+			vetor que guarda valores erro quadrático a iteração 
+
+
+	def sigmoid(x):
+    	return 1 / (1 + np.exp(-x))
+
+	def derivada_sigmoid(x):
+        return np.exp(-x) / np.power(1 + np.exp(-x), 2)
+		
+
+vetor_X = []
+carregar arquivo X.npy
+vetor_X recebe X.npy
+
+vetor_target = []
+carregar arquivo Y_classe.npy
+vetor_target recebe X.npy
+
+
+matriz_v = cria uma matriz (n + 1) x p 
+primeira linha: apenas valor 1 (bias)
+demais linhas: inicializar com valores aleatórios entre -0,5 e 0,5
+
+gera arquivo pesos_camada_de_entrada_inicial.npy para guardar matriz_v
+
+
+matriz_w = cria uma matriz (p + 1) x m
+primeira linha: apenas valor 1 (bias)
+demais linhas: inicializar com valores aleatórios entre -0,5 e 0,5
+
+gera arquivo pesos_camada_escondida_inicial.npy para guardar matriz_w
+
+
+condição_de_parada = número de épocas máximo ou parada antecipada ou baixa variação dos pesos
+
+mlp = class_mlp(pesos_camada_de_entrada, pesos_camada_escondida, camada_de_saída, taxa_de_aprendizado = 0.5, condição_de_parada)
+
+mlp.treinamento(X_data, Y_data)
+
+
+_______________________________________________________________________
+
+Condições de parada: número de épocas máximo ou parada antecipada ou baixa variação dos pesos # verificar se será necessário criar função para algumas das condições
+
+_______________________________________________________________________
+
+Criar Cross validation # verificar se será necessário criar função para implementar cross validation (acho que sim, mas só para dividir o dataset de treinamento em folds)
+
