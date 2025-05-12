@@ -1,119 +1,148 @@
-import math
+import os
 import numpy as np
+import matplotlib.pyplot as plt
 
-class classe_mlp:
-	def_init_(): # verificar como criar o construtor
+class RedeMlp:
+    def __init__(self, modelo_mlp, nome_rede):
+        self.n = modelo_mlp[0]      # neurônios entrada
+        self.p = modelo_mlp[1]      # neurônios camada escondida
+        self.m = modelo_mlp[2]      # neurônios saída
+        self.alfa = modelo_mlp[3]   # taxa de aprendizado
+        self.nome_rede = nome_rede
+        pasta = "C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP"
+        self.arquivo_v = os.path.join(pasta, f"pesos_camada_de_entrada_{nome_rede}.npy")
+        self.arquivo_w = os.path.join(pasta, f"pesos_camada_de_saida_{nome_rede}.npy")
 
-	
-		
-	def feedforward():
+        if not os.path.exists(self.arquivo_v):
+            self.matriz_v = np.zeros((self.n + 1, self.p))
+            self.matriz_v[0, :] = 1
+            self.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
+            np.save(self.arquivo_v, self.matriz_v)
+        else:
+            self.matriz_v = np.load(self.arquivo_v)
 
-		# Separa o bias (primeira linha) e a matriz de pesos (demais linhas)
-		bias_v = matriz_v[0]
-		pesos_v = matriz_v[1:]
+        if not os.path.exists(self.arquivo_w):
+            self.matriz_w = np.zeros((self.p + 1, self.m))
+            self.matriz_w[0, :] = 1
+            self.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
+            np.save(self.arquivo_w, self.matriz_w)
+        else:
+            self.matriz_w = np.load(self.arquivo_w)
 
-		vetor_Z_in = bias_v + vetor_X @ pesos_v 	# produto escalar entre vetor_X e cada coluna de pesos
-		vetor_Z = sigmoid(vetor_Z_in) 				# aplica a função de ativação em cada elemento do vetor vetor_Z_in
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
 
+    def derivada_sigmoid(self, x):
+        return np.exp(-x) / (1 + np.exp(-x))**2
 
-		# Separa o bias (primeira linha) e a matriz de pesos (demais linhas)
-		bias_w = matriz_w[0]
-		pesos_w = matriz_w[1:]
+    def feedforward(self, vetor_X):
+        bias_v = self.matriz_v[0]
+        pesos_v = self.matriz_v[1:]
+        vetor_Z_in = bias_v + vetor_X @ pesos_v
+        vetor_Z = self.sigmoid(vetor_Z_in)
 
-		vetor_Y_in = bias_w + vetor_Z @ pesos_w 	# produto escalar entre vetor_Z e cada coluna de pesos
-		vetor_Y = sigmoid(vetor_Y_in) 				# aplica a função de ativação em cada elemento do vetor vetor_Z_in
-		
-	def backpropagation():
+        bias_w = self.matriz_w[0]
+        pesos_w = self.matriz_w[1:]
+        vetor_Y_in = bias_w + vetor_Z @ pesos_w
+        vetor_Y = self.sigmoid(vetor_Y_in)
 
-		# Cálculo do erro da camada de saída
-		vetor_deltinha_y = (vetor_target - vetor_Y) * derivada_sigmoid(vetor_Y_in)  # Cada unidade de saída considera sua saída e a saída esperada (vetor_target) para o dado de entrada para entao computar o termo de informacao de erro "deltinha"
+        return vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in
 
-		# Correção da camada escondida → saída (matriz_correcao_w com mesmas dimensões de matriz_w)
-		matriz_correcao_w = np.zeros_like(matriz_w)
-		matriz_correcao_w[0] = alfa * vetor_deltinha_y                         # calcula o termo de correção do bias para a matriz_w
-		matriz_correcao_w[1:] = alfa * np.outer(vetor_Z, vetor_deltinha_y)     # calcula o termo de correção dos demais pesos para a matriz_w
+    def backpropagation(self, vetor_target, vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in, vetor_X):
+        vetor_erro = vetor_target - vetor_Y
+        vetor_deltinha_y = vetor_erro * self.derivada_sigmoid(vetor_Y_in)
 
-		# Cálculo do erro da camada escondida
-		vetor_deltinha_z = derivada_sigmoid(vetor_Z_in) * (pesos_w @ vetor_deltinha_y)
+        matriz_delta_w = np.zeros_like(self.matriz_w)
+        matriz_delta_w[0] = self.alfa * vetor_deltinha_y
+        matriz_delta_w[1:] = self.alfa * np.outer(vetor_Z, vetor_deltinha_y)
 
-		# Correção da camada entrada → escondida (matriz_correcao_v com mesmas dimensões de matriz_v)
-		matriz_correcao_v = np.zeros_like(matriz_v)
-		matriz_correcao_v[0] = alfa * vetor_deltinha_z							# calcula o termo de correção do bias para a matriz_v
-		matriz_correcao_v[1:] = alfa * np.outer(vetor_X, vetor_deltinha_z)		# calcula o termo de correção dos demais pesos para a matriz_v
+        vetor_deltinha_z = self.derivada_sigmoid(vetor_Z_in) * (self.matriz_w[1:] @ vetor_deltinha_y)
+        matriz_delta_v = np.zeros_like(self.matriz_v)
+        matriz_delta_v[0] = self.alfa * vetor_deltinha_z
+        matriz_delta_v[1:] = self.alfa * np.outer(vetor_X, vetor_deltinha_z)
 
+        return vetor_erro, matriz_delta_v, matriz_delta_w
 
-	def atualiza_pesos():
+    def atualiza_pesos(self, matriz_delta_v, matriz_delta_w):
+        self.matriz_v += matriz_delta_v
+        self.matriz_w += matriz_delta_w
 
-		global matriz_v, matriz_w  # para que as atualizações persistam fora da função (ver se vai ser necessário)
+    def erro_quadratico_medio(self, matriz_de_erro):
+        erro_total = np.sum(np.square(matriz_de_erro))
+        return erro_total / matriz_de_erro.shape[0]
 
-		matriz_v = matriz_v + matriz_correcao_v
-		matriz_w = matriz_w + matriz_correcao_w
+    def treinamento(self, comando, epocas, matriz_X, matriz_target):
+        vetor_erro_medio = []
 
-	def treinamento(): # função utilizada para treinar o MLP utilizando os dados de treinamento
+        if comando == 1:
+            a = 0
+            vetor_erro_medio.append(1e10)
+            while True:
+                matriz_de_erro = np.zeros_like(matriz_target)
+                for i in range(matriz_X.shape[0]):
+                    matriz_X[i]
+                    print("Saída :", matriz_X[i])
+                    Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
+                    erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
+                    self.atualiza_pesos(delta_v, delta_w)
+                    matriz_de_erro[i] = erro
+                erro_medio = self.erro_quadratico_medio(matriz_de_erro)
+                vetor_erro_medio.append(erro_medio)
 
-		while(condição de parada é falsa)
+                print(f"Época {a}, Erro Médio = {erro_medio:.6f}")
+                if erro_medio >= vetor_erro_medio[a]:
+                    break
+                a += 1
 
-			feedforward()
-			backpropagation()
-			atualiza_pesos()
+        else:
+            for epoca in range(epocas):
+                matriz_de_erro = np.zeros_like(matriz_target)
+                for i in range(matriz_X.shape[0]):
+                    matriz_X[i]
+                    Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
+                    erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
+                    self.atualiza_pesos(delta_v, delta_w)
+                    matriz_de_erro[i] = erro
+                erro_medio = self.erro_quadratico_medio(matriz_de_erro)
+                vetor_erro_medio.append(erro_medio)
+                print(f"Época {epoca}, Erro Médio = {erro_medio:.6f}")
+                if erro_medio < 0.001:
+                    break
 
-	def teste() # função utilizada para rodar o MLP já treinado utilizando agora os dados de teste
-			
-		for X_teste e Y_teste
+        plt.plot(vetor_erro_medio)
+        plt.xlabel("Épocas")
+        plt.ylabel("Erro Quadrático Médio")
+        plt.title("Erro por Época")
+        plt.show()
 
-			feedforward
+        np.save(f"pesos_camada_de_entrada_{self.nome_rede}_final.npy", self.matriz_v)
+        np.save(f"pesos_camada_de_saida_{self.nome_rede}_final.npy", self.matriz_w)
 
-			Calcula média de acertos e guarda
-			
-			Calcula desvio padrão e guarda
-			
-			calcula erro quadrático médio das 120 saídas
+# --- Execução ---
 
-			vetor que guarda valores erro quadrático a iteração 
+arquivo_X = np.load('C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP/X.npy')
+matriz_target = np.load('C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP/Y_classe.npy')
 
+matriz_X = []
 
-	def sigmoid(x):
-    	return 1 / (1 + np.exp(-x))
+for dados in arquivo_X:
+    # Converte o arquivo X.npy contém um array de 4 dimensões com a seguinte forma: (1326, 10, 12, 1) em uma matriz no formato (1326, 120)
+    linha = dados.flatten()
+    linha[linha == -1] = 0 # Substituímos os valores -1 por 0 para que coincida com a codificação one-hot do arquivo Y_classe
+    matriz_X.append(linha)
 
-	def derivada_sigmoid(x):
-        return np.exp(-x) / np.power(1 + np.exp(-x), 2)
-		
+matriz_X = np.array(matriz_X)
+matriz_target = np.array(matriz_target)
 
-vetor_X = []
-carregar arquivo X.npy
-vetor_X recebe X.npy
+print("Selecione a opção desejada")
+print("Digite 1 para utilizar o treinamento com parada antecipada")
+print("Digite 2 para utilizar o treinamento com parada através do erro mínimo ou número máximo de épocas")
+comando = int(input("Digite sua escolha: "))
 
-vetor_target = []
-carregar arquivo Y_classe.npy
-vetor_target recebe X.npy
-
-
-matriz_v = cria uma matriz (n + 1) x p 
-primeira linha: apenas valor 1 (bias)
-demais linhas: inicializar com valores aleatórios entre -0,5 e 0,5
-
-gera arquivo pesos_camada_de_entrada_inicial.npy para guardar matriz_v
-
-
-matriz_w = cria uma matriz (p + 1) x m
-primeira linha: apenas valor 1 (bias)
-demais linhas: inicializar com valores aleatórios entre -0,5 e 0,5
-
-gera arquivo pesos_camada_escondida_inicial.npy para guardar matriz_w
-
-
-condição_de_parada = número de épocas máximo ou parada antecipada ou baixa variação dos pesos
-
-mlp = class_mlp(pesos_camada_de_entrada, pesos_camada_escondida, camada_de_saída, taxa_de_aprendizado = 0.5, condição_de_parada)
-
-mlp.treinamento(X_data, Y_data)
-
-
-_______________________________________________________________________
-
-Condições de parada: número de épocas máximo ou parada antecipada ou baixa variação dos pesos # verificar se será necessário criar função para algumas das condições
-
-_______________________________________________________________________
-
-Criar Cross validation # verificar se será necessário criar função para implementar cross validation (acho que sim, mas só para dividir o dataset de treinamento em folds)
-
+mlp1 = RedeMlp([120, 20, 26, 0.5], "mlp1")
+mlp1.treinamento(
+    comando = comando,
+    epocas = 500,
+    matriz_X = matriz_X[:858],
+    matriz_target = matriz_target[:858]
+)
