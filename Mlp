@@ -14,7 +14,7 @@ class RedeMlp:
         self.m = modelo_mlp[2]      # neurônios saída
         self.alfa = modelo_mlp[3]   # taxa de aprendizado
         self.nome_rede = nome_rede
-        pasta = "C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP"
+        pasta = "coloque o caminho da pasta aqui"
         self.arquivo_v = os.path.join(pasta, f"pesos_camada_entrada_para_escondida_{nome_rede}.npy")
         self.arquivo_w = os.path.join(pasta, f"pesos_camada_escondida_saida_{nome_rede}.npy")
 
@@ -317,8 +317,8 @@ class RedeMlp:
 
 # --- Execução ---
 
-arquivo_X = np.load('C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP/X.npy')
-matriz_target = np.load('C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP/Y_classe.npy')
+arquivo_X = np.load('caminho da pasta/X.npy')
+matriz_target = np.load('caminho da pasta/Y_classe.npy')
 
 matriz_X = []
 
