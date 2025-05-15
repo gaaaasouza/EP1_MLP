@@ -1,6 +1,11 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import string
+import pandas as pd
+import seaborn as sns
+import random
+
 
 class RedeMlp:
     def __init__(self, modelo_mlp, nome_rede):
@@ -10,8 +15,8 @@ class RedeMlp:
         self.alfa = modelo_mlp[3]   # taxa de aprendizado
         self.nome_rede = nome_rede
         pasta = "C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP"
-        self.arquivo_v = os.path.join(pasta, f"pesos_camada_de_entrada_{nome_rede}.npy")
-        self.arquivo_w = os.path.join(pasta, f"pesos_camada_de_saida_{nome_rede}.npy")
+        self.arquivo_v = os.path.join(pasta, f"pesos_camada_entrada_para_escondida_{nome_rede}.npy")
+        self.arquivo_w = os.path.join(pasta, f"pesos_camada_escondida_saida_{nome_rede}.npy")
 
         if not os.path.exists(self.arquivo_v):
             self.matriz_v = np.zeros((self.n + 1, self.p))
@@ -34,6 +39,19 @@ class RedeMlp:
 
     def derivada_sigmoid(self, x):
         return np.exp(-x) / (1 + np.exp(-x))**2
+    
+    def vetor_para_letra(self, vetor):
+        indice = np.argmax(vetor)
+        return chr(ord('A') + indice)
+
+    def func_matriz_confusao(self, matriz_confusao):
+        df = pd.DataFrame(matriz_confusao)
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(df, annot=True, fmt='d', cmap='Blues')
+        plt.xlabel('Letra Predita')
+        plt.ylabel('Letra Real')
+        plt.title('Matriz de Confusão')
+        plt.show()
 
     def feedforward(self, vetor_X):
         bias_v = self.matriz_v[0]
@@ -71,43 +89,87 @@ class RedeMlp:
         erro_total = np.sum(np.square(matriz_de_erro))
         return erro_total / matriz_de_erro.shape[0]
 
-    def treinamento(self, comando, epocas, matriz_X, matriz_target):
+    def treinamento_parada_antecipada(self, epocas, matriz_X, matriz_target, matriz_X_validacao, matriz_target_validacao, paciencia):
         vetor_erro_medio = []
+        vetor_erro_medio_validacao = []
 
-        if comando == 1:
-            a = 0
-            vetor_erro_medio.append(1e10)
-            while True:
-                matriz_de_erro = np.zeros_like(matriz_target)
-                for i in range(matriz_X.shape[0]):
-                    matriz_X[i]
-                    print("Saída :", matriz_X[i])
-                    Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
-                    erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
-                    self.atualiza_pesos(delta_v, delta_w)
-                    matriz_de_erro[i] = erro
-                erro_medio = self.erro_quadratico_medio(matriz_de_erro)
-                vetor_erro_medio.append(erro_medio)
+        melhor_erro_validacao = float('inf')
+        melhor_pesos_v = self.matriz_v.copy()
+        melhor_pesos_w = self.matriz_w.copy()
+        epocas_sem_melhora = 0  # contador de épocas sem melhora
 
-                print(f"Época {a}, Erro Médio = {erro_medio:.6f}")
-                if erro_medio >= vetor_erro_medio[a]:
+        for epoca in range(epocas):
+
+            # ---------- TREINAMENTO ----------
+            matriz_de_erro = np.zeros_like(matriz_target)
+            for i in range(matriz_X.shape[0]):
+                Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
+                erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
+                self.atualiza_pesos(delta_v, delta_w)
+                matriz_de_erro[i] = erro
+            erro_medio = self.erro_quadratico_medio(matriz_de_erro)
+            vetor_erro_medio.append(erro_medio)
+
+
+            # ---------- VALIDAÇÃO ----------
+            matriz_de_erro_validacao = np.zeros_like(matriz_target_validacao)
+            for j in range(matriz_X_validacao.shape[0]):
+                Y_val, _, _, _ = self.feedforward(matriz_X_validacao[j])
+                matriz_de_erro_validacao[j] = matriz_target_validacao[j] - Y_val
+            erro_medio_validacao = self.erro_quadratico_medio(matriz_de_erro_validacao)
+            vetor_erro_medio_validacao.append(erro_medio_validacao)
+
+
+            # ---------- PARADA ANTECIPADA ----------
+            if erro_medio_validacao < melhor_erro_validacao:
+                melhor_erro_validacao = erro_medio_validacao
+                melhor_pesos_v = self.matriz_v.copy()
+                melhor_pesos_w = self.matriz_w.copy()
+                epocas_sem_melhora = 0  # zera contador
+            else:
+                epocas_sem_melhora += 1
+                print(f"Sem melhora há {epocas_sem_melhora} épocas.")
+
+                if epocas_sem_melhora >= paciencia:
+                    print(f"Parada antecipada: erro de validação não melhora há {paciencia} épocas.")
                     break
-                a += 1
 
-        else:
-            for epoca in range(epocas):
-                matriz_de_erro = np.zeros_like(matriz_target)
-                for i in range(matriz_X.shape[0]):
-                    matriz_X[i]
-                    Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
-                    erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
-                    self.atualiza_pesos(delta_v, delta_w)
-                    matriz_de_erro[i] = erro
-                erro_medio = self.erro_quadratico_medio(matriz_de_erro)
-                vetor_erro_medio.append(erro_medio)
-                print(f"Época {epoca}, Erro Médio = {erro_medio:.6f}")
-                if erro_medio < 0.001:
-                    break
+        # print("Vetor Y final de treino:", Y)
+        # print("Vetor Y final de validacao:", Y_val)
+
+        # ---------- Salvando os melhores pesos ----------
+        self.matriz_v = melhor_pesos_v
+        self.matriz_w = melhor_pesos_w
+        np.save(f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
+        np.save(f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy", self.matriz_w)
+
+        # ---------- Gráfico ----------
+        plt.plot(vetor_erro_medio, label="Treinamento")
+        plt.plot(vetor_erro_medio_validacao, label="Validação")
+        plt.xlabel("Épocas")
+        plt.ylabel("Erro Quadrático Médio")
+        plt.title("Erro por Época com Parada Antecipada")
+        plt.legend()
+        plt.show()
+
+    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo):           # treinamento com parada utilizando limite do valor do erro quadrático médio por época
+        vetor_erro_medio = []
+        vetor_erro_medio.append(1e10)
+        for epoca in range(epocas):
+            matriz_de_erro = np.zeros_like(matriz_target)
+            for i in range(matriz_X.shape[0]):
+                matriz_X[i]
+                Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
+                erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
+                self.atualiza_pesos(delta_v, delta_w)
+                matriz_de_erro[i] = erro
+            erro_medio = self.erro_quadratico_medio(matriz_de_erro)
+            vetor_erro_medio.append(erro_medio)
+            print(f"Época {epoca}, Erro Médio = {erro_medio:.6f}")
+            if erro_medio < erro_minimo:
+                break
+
+        # print("Vetor Y final de treino:", Y)
 
         plt.plot(vetor_erro_medio)
         plt.xlabel("Épocas")
@@ -115,8 +177,143 @@ class RedeMlp:
         plt.title("Erro por Época")
         plt.show()
 
-        np.save(f"pesos_camada_de_entrada_{self.nome_rede}_final.npy", self.matriz_v)
-        np.save(f"pesos_camada_de_saida_{self.nome_rede}_final.npy", self.matriz_w)
+        np.save(f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
+        np.save(f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy", self.matriz_w)
+
+
+    def teste(self, matriz_X_teste, matriz_target_teste):
+        acerto = 0
+        matriz_confusao = np.zeros((26, 26), dtype=int)
+
+        for i in range(matriz_X_teste.shape[0]):
+            vetor_Y_teste, _, _, _ = self.feedforward(matriz_X_teste[i])
+            letra_Y = self.vetor_para_letra(vetor_Y_teste)
+            letra_target = self.vetor_para_letra(matriz_target_teste[i])
+
+            if letra_Y == letra_target:
+                acerto += 1
+
+            # Posição real (linha) e predita (coluna) na matriz de confusão
+            linha = ord(letra_target) - ord('A')
+            coluna = ord(letra_Y) - ord('A')
+            matriz_confusao[linha, coluna] += 1
+
+        acuracia = acerto / matriz_X_teste.shape[0]
+        print(f"Acurácia: {acuracia:.4f}")
+
+        self.func_matriz_confusao(matriz_confusao)
+
+        return acuracia, matriz_confusao
+
+    
+    def validacao_cruzada_parada_antecipada(self, matriz_X, matriz_target, k, epocas, paciencia, matriz_X_teste, matriz_target_teste):
+        # Divide os dados em k folds
+        matriz_fold_X = np.array_split(matriz_X, k)
+        matriz_fold_target = np.array_split(matriz_target, k)
+
+        vetor_acuracia = []
+
+        for i in range(k - 1):
+            a = k - 1  # Último fold reservado como teste em cada rodada
+
+            # --- Reinicializa os pesos ---
+            self.matriz_v = np.zeros((self.n + 1, self.p))
+            self.matriz_v[0, :] = 1
+            self.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
+
+            self.matriz_w = np.zeros((self.p + 1, self.m))
+            self.matriz_w[0, :] = 1
+            self.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
+
+            # Constrói os conjuntos de treino, validação e teste
+            X_val = matriz_fold_X[i]
+            target_val = matriz_fold_target[i]
+
+            X_teste = matriz_fold_X[a]
+            target_teste = matriz_fold_target[a]
+
+            # Remove os folds de validação e teste para formar o treino
+
+            X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [i, a]]
+            target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [i, a]]
+
+            # Junta os folds restantes
+            X_treinamento = np.concatenate(X_treinamento, axis=0)
+            target_treinamento = np.concatenate(target_treinamento, axis=0)
+
+            # Treinamento com validação
+            self.treinamento_parada_antecipada(epocas, X_treinamento, target_treinamento, X_val, target_val, paciencia)
+
+            # Avaliação
+            acuracia, _ = self.teste(X_teste, target_teste)
+            vetor_acuracia.append(acuracia)
+
+        # Estatísticas dos folds
+        media_acuracia = np.mean(vetor_acuracia)
+        desvio_padrao = np.std(vetor_acuracia)
+
+        print(f"Média de acurácia nos folds: {media_acuracia:.4f}")
+        print(f"Desvio padrão das acurácias: {desvio_padrao:.4f}")
+
+        # Avaliação final no conjunto de teste externo
+        acuracia_final, matriz_confusao = self.teste(matriz_X_teste, matriz_target_teste)
+        print(f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
+        print("Matriz de Confusão:")
+        print(matriz_confusao)
+
+    def validacao_cruzada_erro_minimo(self, matriz_X, matriz_target, k, epocas, erro_minimo, matriz_X_teste, matriz_target_teste):
+        # Divide os dados em k folds
+        matriz_fold_X = np.array_split(matriz_X, k)
+        matriz_fold_target = np.array_split(matriz_target, k)
+
+        vetor_acuracia = []
+
+        for i in range(k - 1):
+            a = k - 1  # Último fold reservado como teste em cada rodada
+
+            # --- Reinicializa os pesos ---
+            self.matriz_v = np.zeros((self.n + 1, self.p))
+            self.matriz_v[0, :] = 1
+            self.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
+
+            self.matriz_w = np.zeros((self.p + 1, self.m))
+            self.matriz_w[0, :] = 1
+            self.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
+
+            # Constrói o conjunto de teste
+
+            X_teste = matriz_fold_X[a]
+            target_teste = matriz_fold_target[a]
+
+            # Remove os folds de teste para formar o treino
+
+            X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [a]]
+            target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [a]]
+
+            # Junta os folds restantes
+            X_treinamento = np.concatenate(X_treinamento, axis=0)
+            target_treinamento = np.concatenate(target_treinamento, axis=0)
+
+            # Treinamento com erro minimo
+            self.treinamento_erro_minimo(epocas, X_treinamento, target_treinamento, erro_minimo)
+           
+            # Avaliação
+            acuracia, _ = self.teste(X_teste, target_teste)
+            vetor_acuracia.append(acuracia)
+
+        # Estatísticas dos folds
+        media_acuracia = np.mean(vetor_acuracia)
+        desvio_padrao = np.std(vetor_acuracia)
+
+        print(f"Média de acurácia nos folds: {media_acuracia:.4f}")
+        print(f"Desvio padrão das acurácias: {desvio_padrao:.4f}")
+
+        # Avaliação final no conjunto de teste externo
+        acuracia_final, matriz_confusao = self.teste(matriz_X_teste, matriz_target_teste)
+        print(f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
+        print("Matriz de Confusão:")
+        print(matriz_confusao)
+
 
 # --- Execução ---
 
@@ -134,15 +331,57 @@ for dados in arquivo_X:
 matriz_X = np.array(matriz_X)
 matriz_target = np.array(matriz_target)
 
+mlp1 = RedeMlp([120, 20, 26, 0.5], "mlp1")      # Inclusão de parâmetros
+
 print("Selecione a opção desejada")
 print("Digite 1 para utilizar o treinamento com parada antecipada")
 print("Digite 2 para utilizar o treinamento com parada através do erro mínimo ou número máximo de épocas")
 comando = int(input("Digite sua escolha: "))
 
-mlp1 = RedeMlp([120, 20, 26, 0.5], "mlp1")
-mlp1.treinamento(
-    comando = comando,
-    epocas = 500,
-    matriz_X = matriz_X[:858],
-    matriz_target = matriz_target[:858]
-)
+
+if comando == 1:
+    mlp1.treinamento_parada_antecipada(epocas = 10000, 
+        matriz_X = matriz_X[:858], 
+        matriz_target = matriz_target[:858],
+        matriz_X_validacao = matriz_X[859:1196],
+        matriz_target_validacao = matriz_target[859:1196],
+        paciencia = 10
+    )
+
+else:
+    
+    mlp1.treinamento_erro_minimo(
+        epocas = 1000,
+        matriz_X = matriz_X[:1196],
+        matriz_target = matriz_target[:1196], 
+        erro_minimo = 0.06
+    )
+
+
+print("Voce deseja efetuar a avaliação da sua rede com a avalicao cruzada?")
+print("Digite 1 para efetuar a avaliação com parada antecipada")
+print("Digite 2 para efetuar a avaliação com parada através do erro mínimo ou número máximo de épocas")
+print("Digite 3 para sair")
+comand = int(input("Digite sua escolha: "))
+
+if comand == 1:
+    mlp1.validacao_cruzada_parada_antecipada(
+        matriz_X = matriz_X[:1196],
+        matriz_target = matriz_target[:1196], 
+        k = 5, epocas = 1000, paciencia = 10, 
+        matriz_X_teste = matriz_X[1197:1326],
+        matriz_target_teste = matriz_target[1197:1326]
+    )
+
+if comand == 2:
+    mlp1.validacao_cruzada_erro_minimo(
+        matriz_X = matriz_X[:1196],
+        matriz_target = matriz_target[:1196], 
+        k = 5, epocas = 1000, erro_minimo = 0.006, 
+        matriz_X_teste = matriz_X[1197:1326],
+        matriz_target_teste = matriz_target[1197:1326]
+    )
+
+else:
+    SystemExit
+
