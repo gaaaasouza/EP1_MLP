@@ -385,7 +385,7 @@ mlp1.resumo_funcionamento()
 
 # Validação da primeira entrada (treinamento)
 while True:
-    print("Selecione a opção desejada")
+    print("\nSelecione a opção desejada")
     print("Digite 1 para utilizar o treinamento com parada antecipada")
     print("Digite 2 para utilizar o treinamento com parada através do erro mínimo ou número máximo de épocas")
     try:
