@@ -1,10 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import string
 import pandas as pd
 import seaborn as sns
-import random
 
 
 class RedeMlp:
@@ -21,7 +19,9 @@ class RedeMlp:
         if not os.path.exists(self.arquivo_v):
             self.matriz_v = np.zeros((self.n + 1, self.p))
             self.matriz_v[0, :] = 1
-            self.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
+            self.matriz_v[1:, :] = np.random.uniform(
+                -0.5, 0.5, size=(self.n, self.p)
+            )
             np.save(self.arquivo_v, self.matriz_v)
         else:
             self.matriz_v = np.load(self.arquivo_v)
@@ -29,17 +29,38 @@ class RedeMlp:
         if not os.path.exists(self.arquivo_w):
             self.matriz_w = np.zeros((self.p + 1, self.m))
             self.matriz_w[0, :] = 1
-            self.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
+            self.matriz_w[1:, :] = np.random.uniform(
+                -0.5, 0.5, size=(self.p, self.m)
+            )
             np.save(self.arquivo_w, self.matriz_w)
         else:
             self.matriz_w = np.load(self.arquivo_w)
+
+    def resumo_funcionamento(self):
+        print("=" * 60)
+        print(f"Rede MLP Inicializada: {self.nome_rede}")
+        print("-" * 60)
+        print(f"• Neurônios de Entrada      : {self.n}")
+        print(f"• Neurônios na Camada Oculta: {self.p}")
+        print(f"• Neurônios de Saída        : {self.m}")
+        print(f"• Taxa de Aprendizado (α)   : {self.alfa}")
+        print("-" * 60)
+        print("• Função de Ativação        : Sigmoid")
+        print("• Algoritmo de Treinamento  : Backpropagation")
+        print("• Critérios de Parada       :")
+        print("   - Parada antecipada por paciência (sem melhora)")
+        print("   - Erro quadrático médio mínimo")
+        print("-" * 60)
+        print(f"• Pesos salvos em: {self.arquivo_v}")
+        print(f"               e: {self.arquivo_w}")
+        print("=" * 60)
 
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
 
     def derivada_sigmoid(self, x):
         return np.exp(-x) / (1 + np.exp(-x))**2
-    
+
     def vetor_para_letra(self, vetor):
         indice = np.argmax(vetor)
         return chr(ord('A') + indice)
@@ -66,7 +87,10 @@ class RedeMlp:
 
         return vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in
 
-    def backpropagation(self, vetor_target, vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in, vetor_X):
+    def backpropagation(
+        self, vetor_target, vetor_Y, vetor_Y_in,
+        vetor_Z, vetor_Z_in, vetor_X
+    ):
         vetor_erro = vetor_target - vetor_Y
         vetor_deltinha_y = vetor_erro * self.derivada_sigmoid(vetor_Y_in)
 
@@ -74,7 +98,8 @@ class RedeMlp:
         matriz_delta_w[0] = self.alfa * vetor_deltinha_y
         matriz_delta_w[1:] = self.alfa * np.outer(vetor_Z, vetor_deltinha_y)
 
-        vetor_deltinha_z = self.derivada_sigmoid(vetor_Z_in) * (self.matriz_w[1:] @ vetor_deltinha_y)
+        vetor_deltinha_z = self.derivada_sigmoid(
+            vetor_Z_in) * (self.matriz_w[1:] @ vetor_deltinha_y)
         matriz_delta_v = np.zeros_like(self.matriz_v)
         matriz_delta_v[0] = self.alfa * vetor_deltinha_z
         matriz_delta_v[1:] = self.alfa * np.outer(vetor_X, vetor_deltinha_z)
@@ -89,7 +114,10 @@ class RedeMlp:
         erro_total = np.sum(np.square(matriz_de_erro))
         return erro_total / matriz_de_erro.shape[0]
 
-    def treinamento_parada_antecipada(self, epocas, matriz_X, matriz_target, matriz_X_validacao, matriz_target_validacao, paciencia):
+    def treinamento_parada_antecipada(
+        self, epocas, matriz_X, matriz_target,
+        matriz_X_validacao, matriz_target_validacao, paciencia
+    ):
         vetor_erro_medio = []
         vetor_erro_medio_validacao = []
 
@@ -110,15 +138,15 @@ class RedeMlp:
             erro_medio = self.erro_quadratico_medio(matriz_de_erro)
             vetor_erro_medio.append(erro_medio)
 
-
             # ---------- VALIDAÇÃO ----------
             matriz_de_erro_validacao = np.zeros_like(matriz_target_validacao)
             for j in range(matriz_X_validacao.shape[0]):
                 Y_val, _, _, _ = self.feedforward(matriz_X_validacao[j])
-                matriz_de_erro_validacao[j] = matriz_target_validacao[j] - Y_val
+                matriz_de_erro_validacao[j] = (
+                    matriz_target_validacao[j] - Y_val
+                )
             erro_medio_validacao = self.erro_quadratico_medio(matriz_de_erro_validacao)
             vetor_erro_medio_validacao.append(erro_medio_validacao)
-
 
             # ---------- PARADA ANTECIPADA ----------
             if erro_medio_validacao < melhor_erro_validacao:
@@ -140,8 +168,12 @@ class RedeMlp:
         # ---------- Salvando os melhores pesos ----------
         self.matriz_v = melhor_pesos_v
         self.matriz_w = melhor_pesos_w
-        np.save(f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
-        np.save(f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy", self.matriz_w)
+        np.save(
+            f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
+        np.save(
+            f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy",
+            self.matriz_w
+        )
 
         # ---------- Gráfico ----------
         plt.plot(vetor_erro_medio, label="Treinamento")
@@ -152,34 +184,40 @@ class RedeMlp:
         plt.legend()
         plt.show()
 
-    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo):           # treinamento com parada utilizando limite do valor do erro quadrático médio por época
-        vetor_erro_medio = []
-        vetor_erro_medio.append(1e10)
+    # treinamento com parada utilizando limite do valor do erro quadrático médio por época
+    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo):
+        vetor_erro_medio = [1e10]
+
         for epoca in range(epocas):
             matriz_de_erro = np.zeros_like(matriz_target)
+
             for i in range(matriz_X.shape[0]):
-                matriz_X[i]
                 Y, Y_in, Z, Z_in = self.feedforward(matriz_X[i])
-                erro, delta_v, delta_w = self.backpropagation(matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
+                erro, delta_v, delta_w = self.backpropagation(
+                    matriz_target[i], Y, Y_in, Z, Z_in, matriz_X[i])
                 self.atualiza_pesos(delta_v, delta_w)
                 matriz_de_erro[i] = erro
+
             erro_medio = self.erro_quadratico_medio(matriz_de_erro)
             vetor_erro_medio.append(erro_medio)
-            print(f"Época {epoca}, Erro Médio = {erro_medio:.6f}")
-            if erro_medio < erro_minimo:
-                break
 
-        # print("Vetor Y final de treino:", Y)
+            print(f"Época {epoca}, Erro Médio = {erro_medio:.6f}")
+
+            if erro_medio < erro_minimo:
+                print("Critério de parada por erro mínimo atingido.")
+                break
+        else:
+            print("Número máximo de épocas atingido.")
 
         plt.plot(vetor_erro_medio)
         plt.xlabel("Épocas")
         plt.ylabel("Erro Quadrático Médio")
         plt.title("Erro por Época")
         plt.show()
+        plt.close()
 
         np.save(f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
         np.save(f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy", self.matriz_w)
-
 
     def teste(self, matriz_X_teste, matriz_target_teste):
         acerto = 0
@@ -205,7 +243,6 @@ class RedeMlp:
 
         return acuracia, matriz_confusao
 
-    
     def validacao_cruzada_parada_antecipada(self, matriz_X, matriz_target, k, epocas, paciencia, matriz_X_teste, matriz_target_teste):
         # Divide os dados em k folds
         matriz_fold_X = np.array_split(matriz_X, k)
@@ -234,15 +271,18 @@ class RedeMlp:
 
             # Remove os folds de validação e teste para formar o treino
 
-            X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [i, a]]
-            target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [i, a]]
+            X_treinamento = [fold for j, fold in enumerate(
+                matriz_fold_X) if j not in [i, a]]
+            target_treinamento = [fold for j, fold in enumerate(
+                matriz_fold_target) if j not in [i, a]]
 
             # Junta os folds restantes
             X_treinamento = np.concatenate(X_treinamento, axis=0)
             target_treinamento = np.concatenate(target_treinamento, axis=0)
 
             # Treinamento com validação
-            self.treinamento_parada_antecipada(epocas, X_treinamento, target_treinamento, X_val, target_val, paciencia)
+            self.treinamento_parada_antecipada(
+                epocas, X_treinamento, target_treinamento, X_val, target_val, paciencia)
 
             # Avaliação
             acuracia, _ = self.teste(X_teste, target_teste)
@@ -256,8 +296,10 @@ class RedeMlp:
         print(f"Desvio padrão das acurácias: {desvio_padrao:.4f}")
 
         # Avaliação final no conjunto de teste externo
-        acuracia_final, matriz_confusao = self.teste(matriz_X_teste, matriz_target_teste)
-        print(f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
+        acuracia_final, matriz_confusao = self.teste(
+            matriz_X_teste, matriz_target_teste)
+        print(
+            f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
         print("Matriz de Confusão:")
         print(matriz_confusao)
 
@@ -274,11 +316,13 @@ class RedeMlp:
             # --- Reinicializa os pesos ---
             self.matriz_v = np.zeros((self.n + 1, self.p))
             self.matriz_v[0, :] = 1
-            self.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
+            self.matriz_v[1:,
+                          :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
 
             self.matriz_w = np.zeros((self.p + 1, self.m))
             self.matriz_w[0, :] = 1
-            self.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
+            self.matriz_w[1:,
+                          :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
 
             # Constrói o conjunto de teste
 
@@ -287,16 +331,19 @@ class RedeMlp:
 
             # Remove os folds de teste para formar o treino
 
-            X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [a]]
-            target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [a]]
+            X_treinamento = [fold for j, fold in enumerate(
+                matriz_fold_X) if j not in [a]]
+            target_treinamento = [fold for j, fold in enumerate(
+                matriz_fold_target) if j not in [a]]
 
             # Junta os folds restantes
             X_treinamento = np.concatenate(X_treinamento, axis=0)
             target_treinamento = np.concatenate(target_treinamento, axis=0)
 
             # Treinamento com erro minimo
-            self.treinamento_erro_minimo(epocas, X_treinamento, target_treinamento, erro_minimo)
-           
+            self.treinamento_erro_minimo(
+                epocas, X_treinamento, target_treinamento, erro_minimo)
+
             # Avaliação
             acuracia, _ = self.teste(X_teste, target_teste)
             vetor_acuracia.append(acuracia)
@@ -309,79 +356,97 @@ class RedeMlp:
         print(f"Desvio padrão das acurácias: {desvio_padrao:.4f}")
 
         # Avaliação final no conjunto de teste externo
-        acuracia_final, matriz_confusao = self.teste(matriz_X_teste, matriz_target_teste)
-        print(f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
+        acuracia_final, matriz_confusao = self.teste(
+            matriz_X_teste, matriz_target_teste)
+        print(
+            f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
         print("Matriz de Confusão:")
         print(matriz_confusao)
 
 
 # --- Execução ---
 
-arquivo_X = np.load('caminho da pasta/X.npy')
-matriz_target = np.load('caminho da pasta/Y_classe.npy')
+arquivo_X = np.load('C:/Users/Léo/Desktop/MLP/X.npy')
+matriz_target = np.load('C:/Users/Léo/Desktop/MLP/Y_classe.npy')
 
 matriz_X = []
 
 for dados in arquivo_X:
     # Converte o arquivo X.npy contém um array de 4 dimensões com a seguinte forma: (1326, 10, 12, 1) em uma matriz no formato (1326, 120)
     linha = dados.flatten()
-    linha[linha == -1] = 0 # Substituímos os valores -1 por 0 para que coincida com a codificação one-hot do arquivo Y_classe
+    linha[linha == -1] = 0  # Substituímos os valores -1 por 0 para que coincida com a codificação one-hot do arquivo Y_classe
     matriz_X.append(linha)
 
 matriz_X = np.array(matriz_X)
 matriz_target = np.array(matriz_target)
 
-mlp1 = RedeMlp([120, 20, 26, 0.5], "mlp1")      # Inclusão de parâmetros
+mlp1 = RedeMlp([120, 20, 26, 0.5], "Reconhecimento_Letras")
+mlp1.resumo_funcionamento()
 
-print("Selecione a opção desejada")
-print("Digite 1 para utilizar o treinamento com parada antecipada")
-print("Digite 2 para utilizar o treinamento com parada através do erro mínimo ou número máximo de épocas")
-comando = int(input("Digite sua escolha: "))
+# Validação da primeira entrada (treinamento)
+while True:
+    print("Selecione a opção desejada")
+    print("Digite 1 para utilizar o treinamento com parada antecipada")
+    print("Digite 2 para utilizar o treinamento com parada através do erro mínimo ou número máximo de épocas")
+    try:
+        comando = int(input("Digite sua escolha: "))
+        if comando in (1, 2):
+            break
+        else:
+            print("Opção inválida. Digite 1 ou 2.")
+    except ValueError:
+        print("Entrada inválida. Digite um número inteiro.")
 
-
+# Execução do treinamento
 if comando == 1:
-    mlp1.treinamento_parada_antecipada(epocas = 10000, 
-        matriz_X = matriz_X[:858], 
-        matriz_target = matriz_target[:858],
-        matriz_X_validacao = matriz_X[859:1196],
-        matriz_target_validacao = matriz_target[859:1196],
-        paciencia = 10
+    mlp1.treinamento_parada_antecipada(
+        epocas=10000,
+        matriz_X=matriz_X[:858],
+        matriz_target=matriz_target[:858],
+        matriz_X_validacao=matriz_X[859:1196],
+        matriz_target_validacao=matriz_target[859:1196],
+        paciencia=10
     )
-
 else:
-    
     mlp1.treinamento_erro_minimo(
-        epocas = 1000,
-        matriz_X = matriz_X[:1196],
-        matriz_target = matriz_target[:1196], 
-        erro_minimo = 0.06
+        epocas=1000,
+        matriz_X=matriz_X[:1196],
+        matriz_target=matriz_target[:1196],
+        erro_minimo=0.06
     )
 
+# Validação da segunda entrada (avaliação cruzada)
+while True:
+    print("\nVocê deseja efetuar a avaliação da sua rede com a validação cruzada?")
+    print("Digite 1 para avaliação com parada antecipada")
+    print("Digite 2 para avaliação com erro mínimo ou número máximo de épocas")
+    print("Digite 3 para sair")
+    try:
+        comand = int(input("Digite sua escolha: "))
+        if comand in (1, 2, 3):
+            break
+        else:
+            print("Opção inválida. Digite 1, 2 ou 3.")
+    except ValueError:
+        print("Entrada inválida. Digite um número inteiro.")
 
-print("Voce deseja efetuar a avaliação da sua rede com a avalicao cruzada?")
-print("Digite 1 para efetuar a avaliação com parada antecipada")
-print("Digite 2 para efetuar a avaliação com parada através do erro mínimo ou número máximo de épocas")
-print("Digite 3 para sair")
-comand = int(input("Digite sua escolha: "))
-
+# Execução da validação cruzada ou saída
 if comand == 1:
     mlp1.validacao_cruzada_parada_antecipada(
-        matriz_X = matriz_X[:1196],
-        matriz_target = matriz_target[:1196], 
-        k = 5, epocas = 1000, paciencia = 10, 
-        matriz_X_teste = matriz_X[1197:1326],
-        matriz_target_teste = matriz_target[1197:1326]
+        matriz_X=matriz_X[:1196],
+        matriz_target=matriz_target[:1196],
+        k=5, epocas=1000, paciencia=10,
+        matriz_X_teste=matriz_X[1197:1326],
+        matriz_target_teste=matriz_target[1197:1326]
     )
-
-if comand == 2:
+elif comand == 2:
     mlp1.validacao_cruzada_erro_minimo(
-        matriz_X = matriz_X[:1196],
-        matriz_target = matriz_target[:1196], 
-        k = 5, epocas = 1000, erro_minimo = 0.006, 
-        matriz_X_teste = matriz_X[1197:1326],
-        matriz_target_teste = matriz_target[1197:1326]
+        matriz_X=matriz_X[:1196],
+        matriz_target=matriz_target[:1196],
+        k=5, epocas=1000, erro_minimo=0.006,
+        matriz_X_teste=matriz_X[1197:1326],
+        matriz_target_teste=matriz_target[1197:1326]
     )
-
 else:
-    SystemExit
-
+    print("Encerrando o programa.")
+    exit()
