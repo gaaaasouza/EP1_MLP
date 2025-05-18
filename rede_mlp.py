@@ -4,16 +4,17 @@ import matplotlib.pyplot as plt
 import string
 import random
 import numpy as np
+import time
 
 
 class RedeMlp:
-    def __init__(self, modelo_mlp, nome_rede):          # construtor da rede
+    def __init__(self, modelo_mlp, nome_rede, pasta):          # construtor da rede
         self.n = modelo_mlp[0]      # neurônios entrada
         self.p = modelo_mlp[1]      # neurônios camada escondida
         self.m = modelo_mlp[2]      # neurônios saída
         self.alfa = modelo_mlp[3]   # taxa de aprendizado
         self.nome_rede = nome_rede
-        pasta = "C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP"
+        self.pasta = pasta
         self.arquivo_v = os.path.join(pasta, f"pesos_camada_entrada_para_escondida_{nome_rede}.npy")
         self.arquivo_w = os.path.join(pasta, f"pesos_camada_escondida_saida_{nome_rede}.npy")
 
@@ -41,29 +42,44 @@ class RedeMlp:
         return chr(ord('A') + indice)
 
 
-    def func_matriz_confusao(self, matriz_confusao):      # função que gera a matriz confusão após o teste da rede
-        plt.figure(figsize=(12, 10))
-        plt.imshow(matriz_confusao, interpolation='nearest', cmap='Blues')
-        plt.title("Matriz de Confusão")
-        plt.colorbar()
+    def func_matriz_confusao(self, matriz_confusao, nome_arquivo=None):      # função que gera a matriz confusão após o teste da rede
+        """
+        Exibe uma matriz de confusão como um heatmap,
+        com rotulagem de letras de A a Z.
+        """
+        letras = [chr(ord('A') + i) for i in range(26)]  # ['A', 'B', ..., 'Z']
 
-        # Define os rótulos dos eixos (A até Z)
-        classes = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
-        tick_marks = np.arange(len(classes))
-        plt.xticks(tick_marks, classes, rotation=45)
-        plt.yticks(tick_marks, classes)
+        # Cria o gráfico
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        # Desenha a matriz como uma imagem
+        cax = ax.matshow(matriz_confusao, cmap='Blues')
+        plt.colorbar(cax)
 
-        # Adiciona os números dentro de cada célula
-        for i in range(len(classes)):
-            for j in range(len(classes)):
-                valor = matriz_confusao[i, j]
-                cor = "white" if valor > matriz_confusao.max() / 2 else "black"
-                plt.text(j, i, str(valor), horizontalalignment="center", color=cor)
+        # Adiciona rótulos
+        ax.set_xticks(np.arange(26))
+        ax.set_yticks(np.arange(26))
+        ax.set_xticklabels(letras)
+        ax.set_yticklabels(letras)
 
-        plt.xlabel("Letra Predita")
-        plt.ylabel("Letra Real")
+        # Rótulos dos eixos
+        plt.xlabel('Letra Predita')
+        plt.ylabel('Letra Real')
+        plt.title('Matriz de Confusão', pad=20)
+
+        # Anota os valores em cada célula
+        for i in range(26):
+            for j in range(26):
+                valor = matriz_confusao[i][j]
+                if valor > 0:
+                    ax.text(j, i, str(valor), va='center', ha='center', color='black')
+
         plt.tight_layout()
-        plt.show()
+        if nome_arquivo:
+            plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
+            plt.close()
+        else:
+            plt.show()
 
 
     def feedforward(self, vetor_X):                 # função que executa a fase feedforward
@@ -102,9 +118,14 @@ class RedeMlp:
         erro_total = np.sum(np.square(matriz_de_erro))
         return erro_total / matriz_de_erro.shape[0]
 
-    def treinamento_parada_antecipada(self, epocas, matriz_X, matriz_target, matriz_X_validacao, matriz_target_validacao, paciencia):
+    def treinamento_parada_antecipada(self, epocas, matriz_X, matriz_target, matriz_X_validacao, matriz_target_validacao, paciencia, fold = None):
         vetor_erro_medio = []
         vetor_erro_medio_validacao = []
+
+        # Vetores para acompanhar a convergência dos pesos
+        normas_l2_v = []
+        normas_l2_w = []
+
 
         melhor_erro_validacao = float('inf')
         epocas_sem_melhora = 0  # contador de épocas sem melhora
@@ -131,6 +152,12 @@ class RedeMlp:
             vetor_erro_medio_validacao.append(erro_medio_validacao)
             print(f"Época {epoca}, Erro Médio validacao = {erro_medio_validacao:.6f}")
 
+            # ---------- Norma L2 dos pesos ----------
+            norma_v = np.linalg.norm(self.matriz_v)
+            norma_w = np.linalg.norm(self.matriz_w)
+            normas_l2_v.append(norma_v)
+            normas_l2_w.append(norma_w)
+
             # ---------- PARADA ANTECIPADA ----------
             if erro_medio_validacao < melhor_erro_validacao:
                 melhor_erro_validacao = erro_medio_validacao
@@ -143,26 +170,59 @@ class RedeMlp:
                     print(f"Parada antecipada: erro de validação não melhora há {paciencia} épocas.")
                     break
 
-        # print("Vetor Y final de treino:", Y)
-        # print("Vetor Y final de validacao:", Y_val)
-
         # ---------- Salvando os pesos ----------
 
         np.save(f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
         np.save(f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy", self.matriz_w)
 
-        # ---------- Gráfico ----------
+        # ---------- Salvando normas L2 ----------
+        with open(f"normas_l2_pesos_{self.nome_rede}.txt", "w") as f:
+            f.write("Norma L2 dos pesos V (entrada -> escondida):\n")
+            f.write(",".join([f"{v:.6f}" for v in normas_l2_v]) + "\n")
+            f.write("Norma L2 dos pesos W (escondida -> saída):\n")
+            f.write(",".join([f"{w:.6f}" for w in normas_l2_w]) + "\n")
+
+        # ---------- Gráfico dos erros----------
         plt.plot(vetor_erro_medio, label="Treinamento")
         plt.plot(vetor_erro_medio_validacao, label="Validação")
         plt.xlabel("Épocas")
         plt.ylabel("Erro Quadrático Médio")
         plt.title("Erro por Época com Parada Antecipada")
         plt.legend()
-        plt.show()
+        plt.grid(True)
+        # Nome do arquivo com número do fold (se fornecido)
+        if fold is not None:
+            nome_arquivo = f"grafico_PA_erro_fold_{fold}.png"
+        else:
+            nome_arquivo = f"grafico_PA_erro_{self.nome_rede}.png"
+            plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
+            plt.close()
 
-    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo):           # treinamento com parada utilizando limite do valor do erro quadrático médio por época
+         # ---------- Gráfico das normas L2 ----------
+        plt.figure(figsize=(10, 5))
+        plt.plot(normas_l2_v, label="Norma L2 - Pesos V")
+        plt.plot(normas_l2_w, label="Norma L2 - Pesos W")
+        plt.xlabel("Épocas")
+        plt.ylabel("Norma L2")
+        plt.title("Convergência dos Pesos da MLP (Norma L2)")
+        plt.legend()
+        plt.grid(True)
+        if fold is not None:
+            nome_arquivo = f"grafico_PA_Norma_Pesos_fold_{fold}.png"
+        else:
+            nome_arquivo = f"grafico_PA_Norma_Pesos_{self.nome_rede}.png"
+            plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
+            plt.close()
+
+    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo, fold = None):           # treinamento com parada utilizando limite do valor do erro quadrático médio por época
         vetor_erro_medio = []
         vetor_erro_medio.append(1e10)
+
+        # Vetores para acompanhar a convergência dos pesos
+        normas_l2_v = []
+        normas_l2_w = []
+
+
         for epoca in range(epocas):
             matriz_de_erro = np.zeros_like(matriz_target)
             for i in range(matriz_X.shape[0]):
@@ -177,6 +237,12 @@ class RedeMlp:
             if erro_medio < erro_minimo:
                 break
 
+            # ---------- Norma L2 dos pesos ----------
+            norma_v = np.linalg.norm(self.matriz_v)
+            norma_w = np.linalg.norm(self.matriz_w)
+            normas_l2_v.append(norma_v)
+            normas_l2_w.append(norma_w)
+
         # print("Vetor Y final de treino:", Y)
 
         plt.plot(vetor_erro_medio)
@@ -186,17 +252,44 @@ class RedeMlp:
         min_erro = min(vetor_erro_medio)
         max_erro = max(vetor_erro_medio)
         plt.yticks(np.linspace(min_erro, max_erro, 20))  # 20 divisões entre mínimo e máximo
-
         plt.grid(True)
-        plt.show()
+        if fold is not None:
+            nome_arquivo = f"grafico_erro_minimo_fold_{fold}.png"
+        else:
+            nome_arquivo = f"grafico_erro_mínimo{self.nome_rede}.png"
+            plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
+            plt.close()
 
         # ---------- Salvando os pesos ----------
 
         np.save(f"pesos_camada_entrada_para_escondida_{self.nome_rede}_final.npy", self.matriz_v)
         np.save(f"pesos_camada_escondida_saida_{self.nome_rede}_final.npy", self.matriz_w)
 
+        # ---------- Salvando normas L2 ----------
+        with open(f"normas_l2_pesos_{self.nome_rede}.txt", "w") as f:
+            f.write("Norma L2 dos pesos V (entrada -> escondida):\n")
+            f.write(",".join([f"{v:.6f}" for v in normas_l2_v]) + "\n")
+            f.write("Norma L2 dos pesos W (escondida -> saída):\n")
+            f.write(",".join([f"{w:.6f}" for w in normas_l2_w]) + "\n")
 
-    def teste(self, matriz_X_teste, matriz_target_teste, exibir_matriz_confusao=False):        # função que testa a rede
+        # ---------- Gráfico das normas L2 ----------
+        plt.figure(figsize=(10, 5))
+        plt.plot(normas_l2_v, label="Norma L2 - Pesos V")
+        plt.plot(normas_l2_w, label="Norma L2 - Pesos W")
+        plt.xlabel("Épocas")
+        plt.ylabel("Norma L2")
+        plt.title("Convergência dos Pesos da MLP (Norma L2)")
+        plt.legend()
+        plt.grid(True)
+        if fold is not None:
+            nome_arquivo = f"grafico_erro_minimo_Norma_Pesos_fold_{fold}.png"
+        else:
+            nome_arquivo = f"grafico_erro_minimo_Norma_Pesos_{self.nome_rede}.png"
+            plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
+            plt.close()
+
+
+    def teste(self, matriz_X_teste, matriz_target_teste, exibir_matriz_confusao=False, nome_arquivo_matriz_confusao=None):        # função que testa a rede
         acerto = 0
         matriz_confusao = np.zeros((26, 26), dtype=int)
 
@@ -217,6 +310,6 @@ class RedeMlp:
         print(f"Acurácia: {acuracia:.4f}")
 
         if exibir_matriz_confusao:
-            self.func_matriz_confusao(matriz_confusao)
+            self.func_matriz_confusao(matriz_confusao, nome_arquivo=nome_arquivo_matriz_confusao)
 
         return acuracia, matriz_confusao
