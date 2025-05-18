@@ -1,11 +1,12 @@
 from rede_mlp import RedeMlp
 from validacoes import validacao_cruzada_erro_minimo, validacao_cruzada_parada_antecipada
 import numpy as np
+import time
 
 # carrega os arquivos X.npy e Y_classe.npy
 
-arquivo_X = np.load('C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP/X.npy')
-matriz_target = np.load('C:/Users/gaaaa/OneDrive/Desktop/Faculdade/IA/MLP/Y_classe.npy')
+arquivo_X = np.load('Caminho da pasta para o arquivo X.pny/X.npy')
+matriz_target = np.load(''Caminho da pasta para o arquivo Y_classe.npy/Y_classe.npy')
 
 matriz_X = []
 
@@ -18,8 +19,9 @@ for dados in arquivo_X:
 matriz_X = np.array(matriz_X)
 matriz_target = np.array(matriz_target)
 
-mlp1 = RedeMlp([120, 20, 26, 0.5], "mlp1")      # Inclusão de parâmetros da rede [nº neuronios camada de entrada, nº neuronios camada escondida
-                                                # nº neuronios camada de saída, taxa de aprendizado]
+# Inclusão de parâmetros da rede [nº neuronios camada de entrada, nº neuronios camada escondida, nº neuronios camada de saída, taxa de aprendizado]
+
+mlp1 = RedeMlp([120, 20, 26, 0.9], "mlp1", "caminho onde você quer guardar o arquivo dos pesos")
 
 print("Selecione a opção desejada")
 print("Digite 1 para utilizar o treinamento com parada antecipada")
@@ -29,22 +31,39 @@ comando = int(input("Digite sua escolha: "))
 
 
 if comando == 1:
+    inicio = time.time()
     mlp1.treinamento_parada_antecipada(epocas = 10000, 
         matriz_X = matriz_X[:858], 
         matriz_target = matriz_target[:858],
-        matriz_X_validacao = matriz_X[859:1196],
-        matriz_target_validacao = matriz_target[859:1196],
-        paciencia = 5
+        matriz_X_validacao = matriz_X[858:1196],
+        matriz_target_validacao = matriz_target[858:1196],
+        paciencia = 5, fold = None
     )
+    fim = time.time()
+
+    print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
+
+    inicio = time.time()
+    mlp1.teste(matriz_X_teste = matriz_X[1196:1326],
+               matriz_target_teste = matriz_target[1196:1326],
+               exibir_matriz_confusao = True, nome_arquivo_matriz_confusao="PA")
+    
+    fim = time.time()
+
+    print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
+
 
 if comando == 2:
-    
+    inicio = time.time()
     mlp1.treinamento_erro_minimo(
         epocas = 1000,
         matriz_X = matriz_X[:1196],
         matriz_target = matriz_target[:1196], 
-        erro_minimo = 0.011
+        erro_minimo = 0.012, fold = None
     )
+    fim = time.time()
+
+    print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
 else:
 
@@ -55,15 +74,20 @@ else:
     comand = int(input("Digite sua escolha: "))
 
     if comand == 1:
+        inicio = time.time()
         validacao_cruzada_parada_antecipada(rede = mlp1,
             matriz_X = matriz_X[:1196],
             matriz_target = matriz_target[:1196], 
-            k = 10, epocas = 1000, paciencia = 5, 
+            k = 10, epocas = 1000, paciencia = 6, 
             matriz_X_teste = matriz_X[1197:1326],
             matriz_target_teste = matriz_target[1197:1326]
         )
+        fim = time.time()
+
+        print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
     if comand == 2:
+        inicio = time.time()
         validacao_cruzada_erro_minimo(rede = mlp1,
             matriz_X = matriz_X[:1196],
             matriz_target = matriz_target[:1196], 
@@ -71,6 +95,9 @@ else:
             matriz_X_teste = matriz_X[1197:1326],
             matriz_target_teste = matriz_target[1197:1326]
         )
+        fim = time.time()
+
+        print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
     else:
         SystemExit
