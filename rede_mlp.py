@@ -1,10 +1,6 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import string
-import random
-import numpy as np
-import time
 
 
 class RedeMlp:
@@ -19,7 +15,7 @@ class RedeMlp:
         self.arquivo_w = os.path.join(pasta, f"pesos_camada_escondida_saida_{nome_rede}.npy")
 
         # Criando matriz de pesos com valores aleatórios entre -0.5, 0.5 e bias = 1 da camada de entrada -> camada escondida
-        self.matriz_v = np.zeros((self.n + 1, self.p))  
+        self.matriz_v = np.zeros((self.n + 1, self.p))
         self.matriz_v[0, :] = 1
         self.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.n, self.p))
         np.save(self.arquivo_v, self.matriz_v)
@@ -30,17 +26,34 @@ class RedeMlp:
         self.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(self.p, self.m))
         np.save(self.arquivo_w, self.matriz_w)
 
+    def resumo_funcionamento(self):
+        print("=" * 60)
+        print(f"Rede MLP Inicializada: {self.nome_rede}")
+        print("-" * 60)
+        print(f"• Neurônios de Entrada      : {self.n}")
+        print(f"• Neurônios na Camada Oculta: {self.p}")
+        print(f"• Neurônios de Saída        : {self.m}")
+        print(f"• Taxa de Aprendizado (α)   : {self.alfa}")
+        print("-" * 60)
+        print("• Função de Ativação        : Sigmoid")
+        print("• Algoritmo de Treinamento  : Backpropagation")
+        print("• Critérios de Parada       :")
+        print("   - Parada antecipada por paciência (sem melhora)")
+        print("   - Erro quadrático médio mínimo")
+        print("-" * 60)
+        print(f"• Pesos salvos em: {self.arquivo_v}")
+        print(f"               e: {self.arquivo_w}")
+        print("=" * 60)
 
-    def sigmoid(self, x):               
+    def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
 
     def derivada_sigmoid(self, x):
         return np.exp(-x) / (1 + np.exp(-x))**2
-    
-    def vetor_para_letra(self, vetor):      #função que converte vetor one-hot para letra
+
+    def vetor_para_letra(self, vetor):  # função que converte vetor one-hot para letra
         indice = np.argmax(vetor)
         return chr(ord('A') + indice)
-
 
     def func_matriz_confusao(self, matriz_confusao, nome_arquivo=None):      # função que gera a matriz confusão após o teste da rede
         """
@@ -51,7 +64,7 @@ class RedeMlp:
 
         # Cria o gráfico
         fig, ax = plt.subplots(figsize=(10, 8))
-        
+
         # Desenha a matriz como uma imagem
         cax = ax.matshow(matriz_confusao, cmap='Blues')
         plt.colorbar(cax)
@@ -81,7 +94,6 @@ class RedeMlp:
         else:
             plt.show()
 
-
     def feedforward(self, vetor_X):                 # função que executa a fase feedforward
         bias_v = self.matriz_v[0]
         pesos_v = self.matriz_v[1:]
@@ -95,7 +107,7 @@ class RedeMlp:
 
         return vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in
 
-    def backpropagation(self, vetor_target, vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in, vetor_X): # função que executa a fase de retropropagação do erro
+    def backpropagation(self, vetor_target, vetor_Y, vetor_Y_in, vetor_Z, vetor_Z_in, vetor_X):  # função que executa a fase de retropropagação do erro
         vetor_erro = vetor_target - vetor_Y
         vetor_deltinha_y = vetor_erro * self.derivada_sigmoid(vetor_Y_in)
 
@@ -118,14 +130,13 @@ class RedeMlp:
         erro_total = np.sum(np.square(matriz_de_erro))
         return erro_total / matriz_de_erro.shape[0]
 
-    def treinamento_parada_antecipada(self, epocas, matriz_X, matriz_target, matriz_X_validacao, matriz_target_validacao, paciencia, fold = None):
+    def treinamento_parada_antecipada(self, epocas, matriz_X, matriz_target, matriz_X_validacao, matriz_target_validacao, paciencia, fold=None):
         vetor_erro_medio = []
         vetor_erro_medio_validacao = []
 
         # Vetores para acompanhar a convergência dos pesos
         normas_l2_v = []
         normas_l2_w = []
-
 
         melhor_erro_validacao = float('inf')
         epocas_sem_melhora = 0  # contador de épocas sem melhora
@@ -198,7 +209,7 @@ class RedeMlp:
             plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
             plt.close()
 
-         # ---------- Gráfico das normas L2 ----------
+        # ---------- Gráfico das normas L2 ----------
         plt.figure(figsize=(10, 5))
         plt.plot(normas_l2_v, label="Norma L2 - Pesos V")
         plt.plot(normas_l2_w, label="Norma L2 - Pesos W")
@@ -214,14 +225,13 @@ class RedeMlp:
             plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
             plt.close()
 
-    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo, fold = None):           # treinamento com parada utilizando limite do valor do erro quadrático médio por época
+    def treinamento_erro_minimo(self, epocas, matriz_X, matriz_target, erro_minimo, fold=None):           # treinamento com parada utilizando limite do valor do erro quadrático médio por época
         vetor_erro_medio = []
         vetor_erro_medio.append(1e10)
 
         # Vetores para acompanhar a convergência dos pesos
         normas_l2_v = []
         normas_l2_w = []
-
 
         for epoca in range(epocas):
             matriz_de_erro = np.zeros_like(matriz_target)
@@ -287,7 +297,6 @@ class RedeMlp:
             nome_arquivo = f"grafico_erro_minimo_Norma_Pesos_{self.nome_rede}.png"
             plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
             plt.close()
-
 
     def teste(self, matriz_X_teste, matriz_target_teste, exibir_matriz_confusao=False, nome_arquivo_matriz_confusao=None):        # função que testa a rede
         acerto = 0

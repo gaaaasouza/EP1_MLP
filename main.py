@@ -32,22 +32,22 @@ comando = int(input("Digite sua escolha: "))
 
 if comando == 1:
     inicio = time.time()
-    mlp1.treinamento_parada_antecipada(epocas = 10000, 
-        matriz_X = matriz_X[:858], 
-        matriz_target = matriz_target[:858],
-        matriz_X_validacao = matriz_X[858:1196],
-        matriz_target_validacao = matriz_target[858:1196],
-        paciencia = 5, fold = None
-    )
+    mlp1.treinamento_parada_antecipada(epocas=10000,
+                                       matriz_X=matriz_X[:858],
+                                       matriz_target=matriz_target[:858],
+                                       matriz_X_validacao=matriz_X[858:1196],
+                                       matriz_target_validacao=matriz_target[858:1196],
+                                       paciencia=5, fold=None
+                                       )
     fim = time.time()
 
     print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
     inicio = time.time()
-    mlp1.teste(matriz_X_teste = matriz_X[1196:1326],
-               matriz_target_teste = matriz_target[1196:1326],
-               exibir_matriz_confusao = True, nome_arquivo_matriz_confusao="PA")
-    
+    mlp1.teste(matriz_X_teste=matriz_X[1196:1326],
+               matriz_target_teste=matriz_target[1196:1326],
+               exibir_matriz_confusao=True, nome_arquivo_matriz_confusao="PA")
+
     fim = time.time()
 
     print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
@@ -56,10 +56,10 @@ if comando == 1:
 if comando == 2:
     inicio = time.time()
     mlp1.treinamento_erro_minimo(
-        epocas = 1000,
-        matriz_X = matriz_X[:1196],
-        matriz_target = matriz_target[:1196], 
-        erro_minimo = 0.012, fold = None
+        epocas=1000,
+        matriz_X=matriz_X[:1196],
+        matriz_target=matriz_target[:1196],
+        erro_minimo=0.012, fold=None
     )
     fim = time.time()
 
@@ -75,26 +75,26 @@ else:
 
     if comand == 1:
         inicio = time.time()
-        validacao_cruzada_parada_antecipada(rede = mlp1,
-            matriz_X = matriz_X[:1196],
-            matriz_target = matriz_target[:1196], 
-            k = 10, epocas = 1000, paciencia = 6, 
-            matriz_X_teste = matriz_X[1197:1326],
-            matriz_target_teste = matriz_target[1197:1326]
-        )
+        validacao_cruzada_parada_antecipada(rede=mlp1,
+                                            matriz_X=matriz_X[:1196],
+                                            matriz_target=matriz_target[:1196],
+                                            k=10, epocas=1000, paciencia=6,
+                                            matriz_X_teste=matriz_X[1197:1326],
+                                            matriz_target_teste=matriz_target[1197:1326]
+                                            )
         fim = time.time()
 
         print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
     if comand == 2:
         inicio = time.time()
-        validacao_cruzada_erro_minimo(rede = mlp1,
-            matriz_X = matriz_X[:1196],
-            matriz_target = matriz_target[:1196], 
-            k = 10, epocas = 1000, erro_minimo = 0.006, 
-            matriz_X_teste = matriz_X[1197:1326],
-            matriz_target_teste = matriz_target[1197:1326]
-        )
+        validacao_cruzada_erro_minimo(rede=mlp1,
+                                      matriz_X=matriz_X[:1196],
+                                      matriz_target=matriz_target[:1196],
+                                      k=10, epocas=1000, erro_minimo=0.006,
+                                      matriz_X_teste=matriz_X[1197:1326],
+                                      matriz_target_teste=matriz_target[1197:1326]
+                                      )
         fim = time.time()
 
         print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
