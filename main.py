@@ -22,6 +22,7 @@ matriz_target = np.array(matriz_target)
 # Inclusão de parâmetros da rede [nº neuronios camada de entrada, nº neuronios camada escondida, nº neuronios camada de saída, taxa de aprendizado]
 
 mlp1 = RedeMlp([120, 20, 26, 0.9], "mlp1", "caminho onde você quer guardar o arquivo dos pesos")
+mlp1.resumo_funcionamento()
 
 print("Selecione a opção desejada")
 print("Digite 1 para utilizar o treinamento com parada antecipada")
