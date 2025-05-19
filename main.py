@@ -5,8 +5,8 @@ import time
 
 # carrega os arquivos X.npy e Y_classe.npy
 
-arquivo_X = np.load('Caminho da pasta para o arquivo X.pny/X.npy')
-matriz_target = np.load(''Caminho da pasta para o arquivo Y_classe.npy/Y_classe.npy')
+arquivo_X = np.load(r"C:\Users\rafat\Documents\GitHub\EP1_MLP\X.npy")
+matriz_target = np.load(r"C:\Users\rafat\Documents\GitHub\EP1_MLP\Y_classe.npy")
 
 matriz_X = []
 
@@ -21,7 +21,7 @@ matriz_target = np.array(matriz_target)
 
 # Inclusão de parâmetros da rede [nº neuronios camada de entrada, nº neuronios camada escondida, nº neuronios camada de saída, taxa de aprendizado]
 
-mlp1 = RedeMlp([120, 20, 26, 0.9], "mlp1", "caminho onde você quer guardar o arquivo dos pesos")
+mlp1 = RedeMlp([120, 20, 26, 0.9], "mlp1", r"C:\Users\rafat\Documents\GitHub\EP1_MLP")
 mlp1.resumo_funcionamento()
 
 print("Selecione a opção desejada")
@@ -66,7 +66,7 @@ if comando == 2:
 
     print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
-else:
+elif comando == 3:
 
     print("Selecione o tipo de função de avaliação")
     print("Digite 1 para efetuar a validação cruzada com parada antecipada")
@@ -84,10 +84,9 @@ else:
                                             matriz_target_teste=matriz_target[1197:1326]
                                             )
         fim = time.time()
-
         print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
-
-    if comand == 2:
+        
+    elif comand == 2:
         inicio = time.time()
         validacao_cruzada_erro_minimo(rede=mlp1,
                                       matriz_X=matriz_X[:1196],
@@ -97,8 +96,8 @@ else:
                                       matriz_target_teste=matriz_target[1197:1326]
                                       )
         fim = time.time()
-
         print(f"Tempo de execução do treinamento: {fim - inicio:.4f} segundos")
 
-    else:
-        SystemExit
+    elif comand == 3:
+        print("Saindo do programa...")
+        exit()

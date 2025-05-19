@@ -8,23 +8,22 @@ def validacao_cruzada_parada_antecipada(rede, matriz_X, matriz_target, k, epocas
         # Divide os dados em k folds
         matriz_fold_X = np.array_split(matriz_X, k)
         matriz_fold_target = np.array_split(matriz_target, k)
-
+        
         vetor_acuracia = []
 
-        for i in range(k - 1):
-            a = k - 1  # Último fold reservado como teste em cada rodada
-
-            # Constrói os conjuntos de treino, validação e teste
-            X_val = matriz_fold_X[i]
-            target_val = matriz_fold_target[i]
-
-            X_teste = matriz_fold_X[a]
-            target_teste = matriz_fold_target[a]
+        for i in range(k):
+            # O fold atual é usado como teste
+            X_teste = matriz_fold_X[i]
+            target_teste = matriz_fold_target[i]
+            
+            # O fold seguinte (módulo k) é usado como validação
+            val_idx = (i + 1) % k
+            X_val = matriz_fold_X[val_idx]
+            target_val = matriz_fold_target[val_idx]
 
             # Remove os folds de validação e teste para formar o treino
-
-            X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [i, a]]
-            target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [i, a]]
+            X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [i, val_idx]]
+            target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [i, val_idx]]
 
             # Junta os folds restantes
             X_treinamento = np.concatenate(X_treinamento, axis=0)
@@ -33,8 +32,8 @@ def validacao_cruzada_parada_antecipada(rede, matriz_X, matriz_target, k, epocas
             # Treinamento com validação
             rede.treinamento_parada_antecipada(epocas, X_treinamento, target_treinamento, X_val, target_val, paciencia, fold=i+1)
 
-            # Avaliação
-            acuracia, _ = rede.teste(X_teste, target_teste, exibir_matriz_confusao=False, nome_arquivo_matriz_confusao=None)
+            # Avaliação com matriz de confusão para cada fold
+            acuracia, _ = rede.teste(X_teste, target_teste, exibir_matriz_confusao=True, nome_arquivo_matriz_confusao=f"CVPA_fold_{i+1}")
             vetor_acuracia.append(acuracia)
 
             # --- Reinicializa os pesos ---
@@ -90,18 +89,14 @@ def validacao_cruzada_erro_minimo(rede, matriz_X, matriz_target, k, epocas, erro
 
     vetor_acuracia = []
 
-    for i in range(k - 1):
-        a = k - 1  # Último fold reservado como teste em cada rodada
+    for i in range(k):
+        # O fold atual é usado como teste
+        X_teste = matriz_fold_X[i]
+        target_teste = matriz_fold_target[i]
 
-        # Constrói o conjunto de teste
-
-        X_teste = matriz_fold_X[a]
-        target_teste = matriz_fold_target[a]
-
-        # Remove os folds de teste para formar o treino
-
-        X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j not in [a]]
-        target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j not in [a]]
+        # Remove o fold de teste para formar o treino
+        X_treinamento = [fold for j, fold in enumerate(matriz_fold_X) if j != i]
+        target_treinamento = [fold for j, fold in enumerate(matriz_fold_target) if j != i]
 
         # Junta os folds restantes
         X_treinamento = np.concatenate(X_treinamento, axis=0)
@@ -110,8 +105,8 @@ def validacao_cruzada_erro_minimo(rede, matriz_X, matriz_target, k, epocas, erro
         # Treinamento com erro minimo
         rede.treinamento_erro_minimo(epocas, X_treinamento, target_treinamento, erro_minimo, fold = i+1)
         
-        # Avaliação
-        acuracia, _ = rede.teste(X_teste, target_teste, exibir_matriz_confusao=False, nome_arquivo_matriz_confusao=None)
+        # Avaliação com matriz de confusão para cada fold
+        acuracia, _ = rede.teste(X_teste, target_teste, exibir_matriz_confusao=True, nome_arquivo_matriz_confusao=f"CVEM_fold_{i+1}")
         vetor_acuracia.append(acuracia)
 
          # --- Reinicializa os pesos ---
