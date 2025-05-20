@@ -21,7 +21,7 @@ matriz_target = np.array(matriz_target)
 
 # Inclusão de parâmetros da rede [nº neuronios camada de entrada, nº neuronios camada escondida, nº neuronios camada de saída, taxa de aprendizado]
 
-mlp1 = RedeMlp([120, 20, 26, 0.9], "mlp1", r"C:\Users\rafat\Documents\GitHub\EP1_MLP")
+mlp1 = RedeMlp([120, 63, 26, 0.4], "mlp1", r"C:\Users\rafat\Documents\GitHub\EP1_MLP")
 mlp1.resumo_funcionamento()
 
 print("Selecione a opção desejada")
@@ -91,7 +91,7 @@ elif comando == 3:
         validacao_cruzada_erro_minimo(rede=mlp1,
                                       matriz_X=matriz_X[:1196],
                                       matriz_target=matriz_target[:1196],
-                                      k=10, epocas=1000, erro_minimo=0.006,
+                                      k=10, epocas=1000, erro_minimo=0.019,
                                       matriz_X_teste=matriz_X[1197:1326],
                                       matriz_target_teste=matriz_target[1197:1326]
                                       )

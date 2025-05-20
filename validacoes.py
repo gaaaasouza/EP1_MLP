@@ -118,28 +118,41 @@ def validacao_cruzada_erro_minimo(rede, matriz_X, matriz_target, k, epocas, erro
         rede.matriz_w[0, :] = 1
         rede.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(rede.p, rede.m))
 
-    # Estatísticas dos folds
-    media_acuracia = np.mean(vetor_acuracia)
-    desvio_padrao = np.std(vetor_acuracia)
+        # Estatísticas dos folds
+        media_acuracia = np.mean(vetor_acuracia)
+        desvio_padrao = np.std(vetor_acuracia)
 
-    print(f"Média de acurácia nos folds: {media_acuracia:.4f}")
-    print(f"Desvio padrão das acurácias: {desvio_padrao:.4f}")
+        print(f"Média de acurácia nos folds: {media_acuracia:.4f}")
+        print(f"Desvio padrão das acurácias: {desvio_padrao:.4f}")
 
-     # --- Reinicializa os pesos ---
-    rede.matriz_v = np.zeros((rede.n + 1, rede.p))
-    rede.matriz_v[0, :] = 1
-    rede.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(rede.n, rede.p))
+        # --- Salvar resultados em arquivo TXT ---
+        with open("resultado_avaliacao_errominimo.txt", "w") as arquivo:
+            arquivo.write("Resultado da Validação Cruzada\n")
+            arquivo.write("==============================\n")
+            arquivo.write(f"Vetor de Acurácias: {vetor_acuracia}\n")
+            arquivo.write(f"Média de Acurácia: {media_acuracia:.4f}\n")
+            arquivo.write(f"Desvio Padrão: {desvio_padrao:.4f}\n")
 
-    rede.matriz_w = np.zeros((rede.p + 1, rede.m))
-    rede.matriz_w[0, :] = 1
-    rede.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(rede.p, rede.m))
+        # --- Reinicializa os pesos ---
+        rede.matriz_v = np.zeros((rede.n + 1, rede.p))
+        rede.matriz_v[0, :] = 1
+        rede.matriz_v[1:, :] = np.random.uniform(-0.5, 0.5, size=(rede.n, rede.p))
 
-    # Treinamento para gerar um novo conjunto de pesos
+        rede.matriz_w = np.zeros((rede.p + 1, rede.m))
+        rede.matriz_w[0, :] = 1
+        rede.matriz_w[1:, :] = np.random.uniform(-0.5, 0.5, size=(rede.p, rede.m))
 
-    rede.treinamento_erro_minimo(epocas, X_treinamento, target_treinamento, erro_minimo, fold = "CVEM")
+        # Treinamento para gerar um novo conjunto de pesos
 
-    # Avaliação final no conjunto de teste externo
-    acuracia_final, matriz_confusao = rede.teste(matriz_X_teste, matriz_target_teste, exibir_matriz_confusao=True, nome_arquivo_matriz_confusao="CVEM")
-    print(f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
-    print("Matriz de Confusão:")
-    print(matriz_confusao)
+        rede.treinamento_erro_minimo(epocas, X_treinamento, target_treinamento, erro_minimo, fold = "CVEM")
+
+        # Avaliação final no conjunto de teste externo
+        acuracia_final, matriz_confusao = rede.teste(matriz_X_teste, matriz_target_teste, exibir_matriz_confusao=True, nome_arquivo_matriz_confusao="CVEM")
+        print(f"Acurácia final no conjunto de teste externo: {acuracia_final:.4f}")
+        print("Matriz de Confusão:")
+        print(matriz_confusao)
+
+        with open("resultado_avaliacao_errominimo.txt", "a") as arquivo:
+            arquivo.write("\nAvaliação Final no Conjunto de Teste Externo\n")
+            arquivo.write("===========================================\n")
+            arquivo.write(f"Acurácia Final: {acuracia_final:.4f}\n")
